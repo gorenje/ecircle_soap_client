@@ -1,0 +1,31 @@
+#!/usr/bin/env ruby
+# -*- ruby -*-
+require 'rubygems'
+require 'bundler'
+begin
+  Bundler.setup(:default, :development)
+rescue Bundler::BundlerError => e
+  $stderr.puts e.message
+  $stderr.puts "Run `bundle install` to install missing gems"
+  exit e.status_code
+end
+
+original_load_path = $LOAD_PATH
+dirs = ['ext', 'lib'].select { |dir| File.directory?(dir) }
+$LOAD_PATH.unshift(*dirs)
+
+require 'pry'
+require 'ecircle_soap_client'
+
+settings = YAML::load_file(File.join(File.dirname(__FILE__), 'test', '.login.yml'))
+Ecircle.configure do |config|
+  config.user     = settings["user"]
+  config.realm    = settings["realm"]
+  config.password = settings["password"]
+end
+puts "*** Setup Ecircle"
+
+Pry.editor = "emacs"
+Pry.start
+
+$LOAD_PATH.reject! { |path| !(original_load_path.include?(path)) }

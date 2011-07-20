@@ -1,19 +1,28 @@
 = ecircle_soap_client
 
-Description goes here.
+Simple SOAP client for accessing the eCircle synchronous API. This is all done with method_missing
+magic, so don't expect to see anything that could provide with an idea of what the interface does.
 
-== Contributing to ecircle_soap_client
- 
-* Check out the latest master to make sure the feature hasn't been implemented or the bug hasn't been fixed yet
-* Check out the issue tracker to make sure someone already hasn't requested it and/or contributed it
-* Fork the project
-* Start a feature/bugfix branch
-* Commit and push until you are happy with your contribution
-* Make sure to add tests for it. This is important so I don't break it in a future version unintentionally.
-* Please try not to mess with the Rakefile, version, or history. If you want to have your own version, or is otherwise necessary, that is fine, but please isolate to its own commit so I can cherry-pick around it.
+The only thing that is provided is a login/logout and a client for doing that. The rest is all
+method missing.
 
-== Copyright
+For example, to create a user, you can do the following:
 
-Copyright (c) 2011 Gerrit Riessen. See LICENSE.txt for
-further details.
+   (1) u = Ecircle.client.lookup_user_by_email :email => 'mathias@teameurope.net'
+   (2) u.email = "newemail@somedomain.de"
+   (3) Ecircle.client.create_user :userXmlSpec => u.to_xml
+   (4) Ecircle.client.logout
+
+that's it.
+
+line 1 logins, if not already logged on, and does a lookup for a user based on their email. This
+will return (if all goes well) a Ecircle::User object. This user object has a bunch of attributes
+that are all stored in the @all_fields instance variable.
+
+line 2 overrides the original email with a new email address. This is done via method missing
+and updates the all_fields instance variable.
+
+line 3 creates a new user with ecircle. If all goes well, a new user id is returned.
+
+line 4 is optional.
 

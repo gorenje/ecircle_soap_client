@@ -9,16 +9,28 @@ Gem::Specification.new do |s|
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Gerrit Riessen"]
-  s.date = %q{2011-07-19}
+  s.date = %q{2011-07-20}
   s.description = %q{TODO: longer description of your gem}
   s.email = %q{gerrit.riessen@gmail.com}
   s.extra_rdoc_files = [
     "README.rdoc"
   ]
   s.files = [
+    ".document",
     ".rvmrc",
     "Gemfile",
-    "VERSION"
+    "README.rdoc",
+    "Rakefile",
+    "VERSION",
+    "console_config",
+    "ecircle_soap_client.gemspec",
+    "lib/ecircle/client.rb",
+    "lib/ecircle/configuration.rb",
+    "lib/ecircle/user.rb",
+    "lib/ecircle_soap_client.rb",
+    "test/.login.yml.sample",
+    "test/helper.rb",
+    "test/test_ecircle_soap_client.rb"
   ]
   s.homepage = %q{http://google.com/search?q=ecircle}
   s.licenses = ["MIT"]
@@ -32,25 +44,34 @@ Gem::Specification.new do |s|
     if Gem::Version.new(Gem::VERSION) >= Gem::Version.new('1.2.0') then
       s.add_runtime_dependency(%q<rake>, ["= 0.8.7"])
       s.add_runtime_dependency(%q<savon>, [">= 0"])
-      s.add_development_dependency(%q<shoulda>, [">= 0"])
+      s.add_runtime_dependency(%q<nokogiri>, [">= 0"])
+      s.add_development_dependency(%q<pry>, [">= 0"])
+      s.add_development_dependency(%q<thoughtbot-shoulda>, [">= 0"])
       s.add_development_dependency(%q<bundler>, ["~> 1.0.0"])
       s.add_development_dependency(%q<jeweler>, ["~> 1.6.4"])
       s.add_development_dependency(%q<rcov>, [">= 0"])
+      s.add_development_dependency(%q<rr>, [">= 0"])
     else
       s.add_dependency(%q<rake>, ["= 0.8.7"])
       s.add_dependency(%q<savon>, [">= 0"])
-      s.add_dependency(%q<shoulda>, [">= 0"])
+      s.add_dependency(%q<nokogiri>, [">= 0"])
+      s.add_dependency(%q<pry>, [">= 0"])
+      s.add_dependency(%q<thoughtbot-shoulda>, [">= 0"])
       s.add_dependency(%q<bundler>, ["~> 1.0.0"])
       s.add_dependency(%q<jeweler>, ["~> 1.6.4"])
       s.add_dependency(%q<rcov>, [">= 0"])
+      s.add_dependency(%q<rr>, [">= 0"])
     end
   else
     s.add_dependency(%q<rake>, ["= 0.8.7"])
     s.add_dependency(%q<savon>, [">= 0"])
-    s.add_dependency(%q<shoulda>, [">= 0"])
+    s.add_dependency(%q<nokogiri>, [">= 0"])
+    s.add_dependency(%q<pry>, [">= 0"])
+    s.add_dependency(%q<thoughtbot-shoulda>, [">= 0"])
     s.add_dependency(%q<bundler>, ["~> 1.0.0"])
     s.add_dependency(%q<jeweler>, ["~> 1.6.4"])
     s.add_dependency(%q<rcov>, [">= 0"])
+    s.add_dependency(%q<rr>, [">= 0"])
   end
 end
 
