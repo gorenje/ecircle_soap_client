@@ -5,6 +5,9 @@ require 'nokogiri'
 
 require 'ecircle/configuration'
 require 'ecircle/client'
+require 'ecircle/base'
+require 'ecircle/member'
+require 'ecircle/group'
 require 'ecircle/user'
 
 module Ecircle

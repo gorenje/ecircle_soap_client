@@ -32,7 +32,7 @@ module Ecircle
                    case e.message
                    when /No such operation/ then
                      raise NoMethodError, "#{method} (by way of #{e.message})"
-                   when /Not authenticated/ then
+                   when /Not authenticated/, /LoginException/ then
                      @session_token = nil # automagically login with the next call.
                      raise NotLoggedIn, "#{e.message}"
                    else
@@ -43,11 +43,15 @@ module Ecircle
       data = response.
         body["#{method}_response".to_sym]["#{method}_return".to_sym]
 
-      case data
+      if block_given?
+        yield(data)
+      else
+        case data
         when /^[<]user/ then Ecircle::User.new(data)
         when /^[<]member/ then Ecircle::Member.new(data)
-      else
-        data
+        else
+          data
+        end
       end
     end
 
@@ -89,6 +93,5 @@ module Ecircle
     ensure
       @session_token = nil
     end
-
   end
 end

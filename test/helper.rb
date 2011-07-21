@@ -22,9 +22,15 @@ require 'ecircle_soap_client'
 class Test::Unit::TestCase
   include RR::Adapters::TestUnit
 
-  def config_client
-    # keep login details separate from this gem.
-    settings = YAML::load_file(File.join(File.dirname(__FILE__), '.login.yml'))
+  def config_soap_client
+    # keep login details separate from gem.
+    settings = begin
+                 YAML::load_file(File.join(File.dirname(__FILE__), '.login.yml'))
+               rescue
+                 puts "NO test/.login.yml --> copy the sample across to test"
+                 exit 1
+               end
+
     Ecircle.configure do |config|
       config.user     = settings["user"]
       config.realm    = settings["realm"]
