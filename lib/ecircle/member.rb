@@ -7,6 +7,7 @@ module Ecircle
     end
 
     def initialize(xml_string)
+      super()
       init_with_xml("member", xml_string)
     end
 

@@ -9,29 +9,36 @@ Gem::Specification.new do |s|
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Gerrit Riessen"]
-  s.date = %q{2011-07-20}
+  s.date = %q{2011-07-22}
   s.description = %q{TODO: longer description of your gem}
   s.email = %q{gerrit.riessen@gmail.com}
   s.extra_rdoc_files = [
-    "README.rdoc"
+    "README.md"
   ]
   s.files = [
     ".document",
     ".rvmrc",
     "Gemfile",
-    "README.rdoc",
+    "README.md",
     "Rakefile",
     "VERSION",
     "ecircle_soap_client.gemspec",
+    "lib/ecircle/base.rb",
     "lib/ecircle/client.rb",
     "lib/ecircle/configuration.rb",
+    "lib/ecircle/group.rb",
     "lib/ecircle/member.rb",
+    "lib/ecircle/message.rb",
     "lib/ecircle/user.rb",
     "lib/ecircle_soap_client.rb",
     "start_pry_with_ecircle",
     "test/.login.yml.sample",
     "test/helper.rb",
-    "test/test_ecircle_soap_client.rb"
+    "test/test_ecircle_soap_client.rb",
+    "test/test_ecircle_soap_client_group.rb",
+    "test/test_ecircle_soap_client_member.rb",
+    "test/test_ecircle_soap_client_message.rb",
+    "test/test_ecircle_soap_client_user.rb"
   ]
   s.homepage = %q{http://google.com/search?q=ecircle}
   s.licenses = ["MIT"]
@@ -46,6 +53,8 @@ Gem::Specification.new do |s|
       s.add_runtime_dependency(%q<rake>, ["= 0.8.7"])
       s.add_runtime_dependency(%q<savon>, [">= 0"])
       s.add_runtime_dependency(%q<nokogiri>, [">= 0"])
+      s.add_runtime_dependency(%q<multipart-post>, [">= 0"])
+      s.add_runtime_dependency(%q<uuidtools>, [">= 0"])
       s.add_development_dependency(%q<pry>, [">= 0"])
       s.add_development_dependency(%q<pry-doc>, [">= 0"])
       s.add_development_dependency(%q<gist>, [">= 0"])
@@ -58,6 +67,8 @@ Gem::Specification.new do |s|
       s.add_dependency(%q<rake>, ["= 0.8.7"])
       s.add_dependency(%q<savon>, [">= 0"])
       s.add_dependency(%q<nokogiri>, [">= 0"])
+      s.add_dependency(%q<multipart-post>, [">= 0"])
+      s.add_dependency(%q<uuidtools>, [">= 0"])
       s.add_dependency(%q<pry>, [">= 0"])
       s.add_dependency(%q<pry-doc>, [">= 0"])
       s.add_dependency(%q<gist>, [">= 0"])
@@ -71,6 +82,8 @@ Gem::Specification.new do |s|
     s.add_dependency(%q<rake>, ["= 0.8.7"])
     s.add_dependency(%q<savon>, [">= 0"])
     s.add_dependency(%q<nokogiri>, [">= 0"])
+    s.add_dependency(%q<multipart-post>, [">= 0"])
+    s.add_dependency(%q<uuidtools>, [">= 0"])
     s.add_dependency(%q<pry>, [">= 0"])
     s.add_dependency(%q<pry-doc>, [">= 0"])
     s.add_dependency(%q<gist>, [">= 0"])

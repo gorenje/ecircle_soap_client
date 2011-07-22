@@ -10,7 +10,7 @@ module Ecircle
       @all_fields[name.to_sym]
     end
 
-    def initialize(*args)
+    def initialize
       @id, @all_fields, @named_attrs = "", {}, {}
     end
 

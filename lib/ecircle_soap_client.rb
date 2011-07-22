@@ -2,6 +2,10 @@
 
 require 'savon'
 require 'nokogiri'
+require 'net/http/post/multipart'
+require 'uuidtools'
+require 'base64'
+require 'ostruct'
 
 require 'ecircle/configuration'
 require 'ecircle/client'
@@ -9,6 +13,7 @@ require 'ecircle/base'
 require 'ecircle/member'
 require 'ecircle/group'
 require 'ecircle/user'
+require 'ecircle/message'
 
 module Ecircle
   extend self

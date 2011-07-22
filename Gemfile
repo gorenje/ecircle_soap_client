@@ -4,6 +4,8 @@ source "http://rubygems.org"
 gem 'rake', "= 0.8.7"
 gem 'savon'
 gem 'nokogiri'
+gem 'multipart-post', :git => 'git://github.com/gorenje/multipart-post.git'
+gem 'uuidtools'
 
 group :development do
   gem 'pry'

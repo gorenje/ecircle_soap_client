@@ -23,7 +23,7 @@ module Ecircle
     end
 
     def initialize(hsh = nil)
-      super
+      super()
       @all_fields = hsh || {}
       @id = self[:id]
     end

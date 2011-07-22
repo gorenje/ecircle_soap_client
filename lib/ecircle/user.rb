@@ -25,7 +25,7 @@ module Ecircle
     end
 
     def initialize(xml_string = nil)
-      super
+      super()
       initialize_with_xml(xml_string) if xml_string
     end
 
