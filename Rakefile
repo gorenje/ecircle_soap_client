@@ -17,8 +17,8 @@ Jeweler::Tasks.new do |gem|
   gem.name = "ecircle_soap_client"
   gem.homepage = "http://google.com/search?q=ecircle"
   gem.license = "MIT"
-  gem.summary = %Q{TODO: one-line summary of your gem}
-  gem.description = %Q{TODO: longer description of your gem}
+  gem.summary = %Q{Ecircle SOAP client for synchron API}
+  gem.description = %Q{See summary.}
   gem.email = "gerrit.riessen@gmail.com"
   gem.authors = ["Gerrit Riessen"]
   # dependencies defined in Gemfile
