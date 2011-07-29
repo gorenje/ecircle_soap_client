@@ -1,0 +1,140 @@
+#!/usr/bin/env ruby
+# -*- ruby -*-
+
+# Example of using the Async API from eCircle. This will send an email with
+# an inline image to a group that you specify below. Also you will need to
+# provide a Async Realm - see below for details.
+
+# To send the entire multipart post to localhost:
+#   ./mail_message --use-localhost
+# will send the entire soap stuff to localhost port 3000. Use netcat to view
+# the results. Else this will connect to eCircle and send the email.
+# Start netcat with something like: nc -l -p 3000
+
+require 'rubygems'
+require 'bundler'
+begin
+  Bundler.setup(:default, :development)
+rescue Bundler::BundlerError => e
+  $stderr.puts e.message
+  $stderr.puts "Run `bundle install` to install missing gems"
+  exit e.status_code
+end
+
+original_load_path = $LOAD_PATH
+dirs = ['ext', 'lib'].select { |dir| File.directory?(dir) }
+$LOAD_PATH.unshift(*dirs)
+
+require 'pry'
+require 'ecircle_soap_client'
+
+settings = YAML::load_file(File.join(File.dirname(__FILE__), 'test', '.login.yml'))
+Ecircle.configure do |config|
+  config.user     = settings["user"]
+  config.realm    = settings["realm"]
+  config.password = settings["password"]
+end
+
+@use_localhost = false
+
+opts = OptionParser.new do |o|
+  o.program_name = 'ruby create_redmine_project'
+  o.separator 'Options:'
+  # start netcat on port 3000 and see what is generated: nc -l -p 3000
+  o.on('--use-localhost', '-l', 'Connect to localhost') { @use_localhost = true }
+  o.on_tail('--help', '-h', 'Show this message') do
+    puts opts
+    exit
+  end
+end
+opts.parse!(ARGV)
+
+GroupName = 'needagroupname' # this is a group defined @ eCircle
+AsyncRealm = 'needarealm' # Async Realm is the domain prefix on the original realm
+                          # provided by eCircle.
+
+reqid = UUIDTools::UUID.random_create.to_s.gsub(/-/,'')
+grpid = Ecircle::Group.find_by_name(GroupName).id
+html_content = <<-EOF
+         <h1>Hello World</h1>
+         <p> will it arrive with image?
+         <p>
+         <img src="pic.png"/>
+      EOF
+
+soap_header = Savon::SOAP::XML.new.xml do |x|
+  x.tag!("SOAP-ENV:Envelope",
+         "xmlns:SOAP-ENV"=>"http://schemas.xmlsoap.org/soap/envelope/",
+         "xmlns:soapenc"=>"http://schemas.xmlsoap.org/soap/encoding/") do
+    x.tag!("SOAP-ENV:Header") do
+      x.authenticate(:xmlns => "http://webservices.ecircle-ag.com/ws") do
+        # NOTE: this is just the prefix of the realm and not the complete realm, this
+        # NOTE: needs to be either a separate configuration option or we take it out of the
+        # NOTE: original realm value.
+        x.realm AsyncRealm # Ecircle.configure.realm.gsub(/http:\/\/www[.]/,'')
+        x.email Ecircle.configure.user
+        x.password Ecircle.configure.password
+      end
+    end
+    x.tag!("SOAP-ENV:Body") do
+      x.postGroupRequest(:xmlns=>"http://webservices.ecircle-ag.com/ws") do
+        x.control(:xmlns=>"http://webservices.ecircle-ag.com/ecm",
+                  "group-id"=>grpid, "request-id"=>reqid) do
+          x.tag!("member-list", "add-mode" => "add", "sync-mode" => "add") do
+            x.user do
+              x.email "gerrit.riessen@gmail.com"
+              x.firstname "gerrit"
+              x.lastname "riessen"
+            end
+          end
+          x.message("message-id" => "new") do
+            x.tag!("sendout-preferences") do
+              x.tag!("object-handling", "html-images"=>"inline")
+              x.tag!("email-channel", "preferred-format"=>"email-html-multipart")
+            end
+            x.tag!("send-date") do
+              x.immediately
+            end
+            x.content("target-content-encoding"=>"UTF-8") do
+              x.subject "hello world"
+              x.text "no real text, just garbage"
+              x.html html_content
+              x.image("content-type" => "image/png", "src-ref" => "pic.png") do
+                x.tag!("uri-reference", "pic.png")
+              end
+            end
+          end
+        end
+      end
+    end
+  end
+end
+
+url = if @use_localhost
+        URI.parse('http://localhost:3000/eC-MessageService')
+      else
+        URI.parse("http://www.#{AsyncRealm}.ecircle-ag.com/eCMessageService")
+      end
+
+base_64_encoded = Base64.encode64(File.read("pic.png"))
+req = Net::HTTP::Post::Multipart.new(url.path,
+           {"pic.png" => UploadIO.new(StringIO.new(base_64_encoded),
+                                      "image/png",
+                                      "pic.png",
+                                      {"Content-Transfer-Encoding" => "base64",
+                                       "Content-Disposition" => "attachment",
+                                       "Content-ID" => "pic.png"}),
+             "soap.xml" => UploadIO.new(StringIO.new(soap_header.strip),
+                                        "text/xml; charset=utf-8",
+                                        "soap.xml")},
+           { "SOAPAction" => "http://www.#{AsyncRealm}.ecircle-ag.com/eCMessageService",
+             "Content-Type" => "multipart/related" },
+           UUIDTools::UUID.random_create.to_s.gsub(/-/,'').
+           gsub(/1/,"L").gsub(/3/,"E").sub(/^/,'-----------MpG'))
+
+res = Net::HTTP.start(url.host, url.port) do |http|
+  http.request(req)
+end
+puts res
+
+$LOAD_PATH.reject! { |path| !(original_load_path.include?(path)) }
