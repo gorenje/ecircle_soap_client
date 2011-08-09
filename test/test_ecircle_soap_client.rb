@@ -7,6 +7,28 @@ class TestEcircleSoapClient < Test::Unit::TestCase
     config_soap_client
   end
 
+  context "time helpers" do
+    should "extend Time with ecircle_format" do
+      assert_equal({ :snafu_yyyy => '1910',
+                     :snafu_mm   => '00',
+                     :snafu_dd   => '01',
+                     :snafu_hh   => '04',
+                     :snafu_min  => '03',
+                     :snafu_ss   => '09',
+                   }, Time.mktime(1910, 1, 1, 4, 3, 9).ecircle_format("snafu"))
+    end
+
+    should "extend Date with ecircle_format" do
+      assert_equal({ :fubar_yyyy => '1910',
+                     :fubar_mm   => '00',
+                     :fubar_dd   => '01',
+                     :fubar_hh   => '00',
+                     :fubar_min  => '00',
+                     :fubar_ss   => '00',
+                   }, Date.new(1910, 1, 1).ecircle_format("fubar"))
+    end
+  end
+
   context "Ecircle::Client" do
     should "logon if not logged in" do
       mock_ecircle_client(true) do |client, req_obj|
