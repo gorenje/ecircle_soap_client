@@ -39,14 +39,8 @@ module Ecircle
     def delete
       Ecircle.client.delete_message :messageId => self.id
       true
-    rescue Savon::SOAP::Fault => e
-      case e.message
-      when /Permission Problem/
-        # specific case where the user is not allowed to delete messages.
-        false
-      else
-        raise e
-      end
+    rescue Ecircle::Client::PermissionDenied => e
+      false
     end
 
     # This does one of two things, if the message is of type 'single', then
@@ -55,35 +49,45 @@ module Ecircle
     #
     # If parameters are given and this is a single message, then a parameterized
     # version of the message is sent.
+    #
+    # Return value is an array with the first value being boolean to indicate
+    # success status. The second value is the original result returned by the
+    # ecircle API. The thing is, that ecircle will return nil on success, so
+    # in that case, we return [true, nil].
     def send_to_user(user, parameters = nil)
-      case self[:type]
+      result = case self[:type]
 
-      when /single/
-        if parameters.nil?
-          Ecircle.client.
-            send_single_message_to_user :singleMessageId => @id, :userId => user.id
-        else
-          paras = {
-            :singleMessageId => @id,
-            :userId          => user.id,
-            :names           => parameters.keys,
-            :values          => parameters.values,
-          }
-          Ecircle.client.send_parametrized_single_message_to_user(paras)
-        end
+               when /single/
+                 if parameters.nil?
+                   Ecircle.client.
+                     send_single_message_to_user(:singleMessageId => @id,
+                                                 :userId => user.id)
+                 else
+                   paras = { :singleMessageId => @id,
+                             :userId          => user.id,
+                             :names           => parameters.keys,
+                             :values          => parameters.values,
+                           }
+                   Ecircle.client.send_parametrized_single_message_to_user(paras)
+                 end
 
-      when /normal/
-        # raise an exception because this is inconsistent: a group message without
-        # group_id is not possible.
-        raise MessageGroupNotDefined, "MsgId: #{self.id}" unless self[:group_id]
+               when /normal/
+                 # raise an exception because this is inconsistent: a group message without
+                 # group_id is not possible.
+                 raise MessageGroupNotDefined, "MsgId: #{self.id}" unless self[:group_id]
 
-        Ecircle.client.
-          send_group_message_to_user(:userId    => user.id,
-                                     :messageId => @id,
-                                     :groupid   => self[:group_id])
-      else
-        raise MessageTypeUnknown, "Type: #{self[:type]} unknown for MsgId: #{self.id}"
-      end
+                 Ecircle.client.
+                   send_group_message_to_user(:userId    => user.id,
+                                              :messageId => @id,
+                                              :groupid   => self[:group_id])
+               else
+                 raise(MessageTypeUnknown, "Type: #{self[:type]} unknown for "+
+                       "MsgId: #{self.id}")
+               end
+
+      # strangely, if the message sending worked out, then ecircle sends nil, i.e.
+      # nothing back. Else we get some sort of strange error or exception.
+      result.nil? ? [true, nil] : [false, result]
     end
   end
 end

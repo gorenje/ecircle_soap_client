@@ -96,13 +96,13 @@ module Ecircle
 
       when /Not authenticated/, /LoginException/ then
         @session_token = nil # automagically login with the next call.
-        raise NotLoggedIn, "#{exception.message}"
+        raise NotLoggedIn, exception.message
 
       when /Authorisation failure/, /Permission Problem/ then
         # This is not a login issue per-se, this is an authorisation
         # issue, so the client must decide whether to logon again to
         # attempt to resolve the issue.
-        raise PermissionDenied, "#{exception.message}"
+        raise PermissionDenied, exception.message
 
       else
         raise exception

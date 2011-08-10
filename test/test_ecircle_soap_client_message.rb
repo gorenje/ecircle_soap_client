@@ -49,11 +49,11 @@ class TestEcircleSoapClientMessage < Test::Unit::TestCase
       end
     end
 
-    should "delete: capture specific soap fault and return false" do
+    should "delete: capture permission denied fault and return false" do
       mock_ecircle_client do |client|
         msg = Ecircle::Message.new(:id => "fubar")
         client.delete_message(:messageId => "fubar") do
-          raise _soap_fault("Permission Problem")
+          raise Ecircle::Client::PermissionDenied.new("fubar")
         end
         assert_equal false, msg.delete
       end
@@ -63,7 +63,7 @@ class TestEcircleSoapClientMessage < Test::Unit::TestCase
       mock_ecircle_client do |client|
         msg = Ecircle::Message.new(:id => "fubar")
         client.delete_message(:messageId => "fubar") do
-          raise _soap_fault("Permissdion Problem")
+          raise _soap_fault("Some other unknonwn exception")
         end
 
         assert_raises Savon::SOAP::Fault do
@@ -100,32 +100,55 @@ class TestEcircleSoapClientMessage < Test::Unit::TestCase
 
       should "use single message if no parameters" do
         mock_ecircle_client do |client|
-          msg,user = Ecircle::Message.new(:type => 'single',:id => "fubar"), Ecircle::User.new
+          msg     = Ecircle::Message.new(:type => 'single', :id => "fubar")
+          user    = Ecircle::User.new
           user.id = "snafu"
 
-          client.send_single_message_to_user :singleMessageId => "fubar", :userId => user.id
-          msg.send_to_user user
+          client.send_single_message_to_user(:singleMessageId => "fubar",
+                                             :userId => user.id)
+          result = msg.send_to_user user
+          assert_equal true, result.first
+          assert_equal nil, result.last
+        end
+      end
+
+      should "return false and the result if result != nil" do
+        mock_ecircle_client do |client|
+          msg     = Ecircle::Message.new(:type => 'single', :id => "fubar")
+          user    = Ecircle::User.new
+          user.id = "snafu"
+
+          client.send_single_message_to_user(:singleMessageId => "fubar",
+                                             :userId => user.id) { "result not nil" }
+          result = msg.send_to_user user
+          assert_equal false, result.first
+          assert_equal "result not nil", result.last
         end
       end
 
       should "use parameterized if there are paramters" do
         mock_ecircle_client do |client|
-          msg,user = Ecircle::Message.new(:type => 'single', :id => "fubar"), Ecircle::User.new
+          msg     = Ecircle::Message.new(:type => 'single', :id => "fubar")
+          user    = Ecircle::User.new
           user.id = "snafu"
           parameters = {
             :one => :two,
             :three => :four
           }
-          client.send_parametrized_single_message_to_user(:singleMessageId => "fubar",
-                                                          :userId          => user.id,
-                                                          :names           => parameters.keys,
-                                                          :values          => parameters.values)
-          msg.send_to_user user, parameters
+          client.
+            send_parametrized_single_message_to_user(:singleMessageId => "fubar",
+                                                     :userId          => user.id,
+                                                     :names           => parameters.keys,
+                                                     :values          => parameters.values)
+          result = msg.send_to_user user, parameters
+          assert_equal true, result.first
+          assert_equal nil, result.last
         end
       end
 
       should "throw exception if type is normal but group id does not exist" do
-        msg,user = Ecircle::Message.new(:type => 'normal',:id => "fubar"), Ecircle::User.new
+        msg     = Ecircle::Message.new(:type => 'normal', :id => "fubar")
+        user    = Ecircle::User.new
         user.id = "snafu"
         assert_raises Ecircle::Message::MessageGroupNotDefined do
           msg.send_to_user user
@@ -134,13 +157,16 @@ class TestEcircleSoapClientMessage < Test::Unit::TestCase
 
       should "use group message if normal and group id is defined" do
         mock_ecircle_client do |client|
-          msg,user = Ecircle::Message.new(:type => 'normal', :group_id => "groupid",
-                                          :id => "fubar"), Ecircle::User.new
+          msg     = Ecircle::Message.new(:type => 'normal', :group_id => "groupid",
+                                         :id => "fubar")
+          user    = Ecircle::User.new
           user.id = "snafu"
 
           client.send_group_message_to_user(:userId    => user.id, :messageId => "fubar",
                                             :groupid   => "groupid")
-          msg.send_to_user user
+          result = msg.send_to_user user
+          assert_equal true, result.first
+          assert_equal nil, result.last
         end
       end
     end
