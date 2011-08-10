@@ -63,6 +63,49 @@ class TestEcircleSoapClient < Test::Unit::TestCase
       end
     end
 
+    should "be able to handle various exceptions" do
+      client = Ecircle::Client.new
+
+      assert_raises Savon::SOAP::Fault do
+        client.send( :handle_savon_fault, _soap_fault("Unknown exception message"),
+                     :for_method => 'fubar')
+      end
+
+      assert_raises RuntimeError do
+        client.send( :handle_savon_fault, RuntimeError.new("hello world"),
+                     :for_method => 'fubar')
+      end
+
+      begin
+        client.send( :handle_savon_fault, _soap_fault("No such operation"),
+                     :for_method => 'fubar')
+        assert false, "should not get here."
+      rescue NoMethodError => e
+        assert_equal "fubar (by way of (client) No such operation)", e.message
+      end
+
+      begin
+        client.send( :handle_savon_fault, _soap_fault("No such operation"))
+        assert false, "should not get here."
+      rescue NoMethodError => e
+        assert_equal "UNKNOWN (by way of (client) No such operation)", e.message
+      end
+
+      assert_raises Ecircle::Client::NotLoggedIn do
+        client.send( :handle_savon_fault, _soap_fault("Not authenticated"))
+      end
+      assert_raises Ecircle::Client::NotLoggedIn do
+        client.send( :handle_savon_fault, _soap_fault("LoginException"))
+      end
+
+      assert_raises Ecircle::Client::PermissionDenied do
+        client.send( :handle_savon_fault, _soap_fault("Authorisation failure"))
+      end
+      assert_raises Ecircle::Client::PermissionDenied do
+        client.send( :handle_savon_fault, _soap_fault("Permission Problem"))
+      end
+    end
+
     should "not logon if already logged in" do
       client, req_obj = Ecircle::Client.new, Object.new
 

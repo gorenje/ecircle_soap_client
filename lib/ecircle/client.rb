@@ -2,12 +2,10 @@ module Ecircle
   class Client
     attr_reader :session_token
 
-    LoginFailed = Class.new(RuntimeError)
-    NotLoggedIn = Class.new(RuntimeError)
+    LoginFailed      = Class.new(RuntimeError)
+    NotLoggedIn      = Class.new(RuntimeError)
+    PermissionDenied = Class.new(RuntimeError)
 
-    # Savon::SOAP::Fault: (ns1:Client) No such operation
-    # Savon::SOAP::Fault: (soapenv:Server.userException) com.ecircleag.webservices.EcMException: Not authenticated
-    # Savon::SOAP::Fault: (soapenv:Server.userException) com.ecircleag.webservices.EcMException: Error: com.domeus.filter.web.IllegalParameterException: Not a valid email address.: pemail
     def initialize
       @session_token = nil
     end
@@ -29,15 +27,7 @@ module Ecircle
       response = begin
                    client.request(method_name) { soap.body = body }
                  rescue Savon::SOAP::Fault => e
-                   case e.message
-                   when /No such operation/ then
-                     raise NoMethodError, "#{method} (by way of #{e.message})"
-                   when /Not authenticated/, /LoginException/ then
-                     @session_token = nil # automagically login with the next call.
-                     raise NotLoggedIn, "#{e.message}"
-                   else
-                     raise e
-                   end
+                   handle_savon_fault(e, :for_method => method)
                  end
 
       data = response.
@@ -92,6 +82,31 @@ module Ecircle
       end
     ensure
       @session_token = nil
+    end
+
+    private
+
+    def handle_savon_fault(exception, opts = {})
+      method = opts[:for_method] || "UNKNOWN"
+
+      case exception.message
+
+      when /No such operation/ then
+        raise NoMethodError, "#{method} (by way of #{exception.message})"
+
+      when /Not authenticated/, /LoginException/ then
+        @session_token = nil # automagically login with the next call.
+        raise NotLoggedIn, "#{exception.message}"
+
+      when /Authorisation failure/, /Permission Problem/ then
+        # This is not a login issue per-se, this is an authorisation
+        # issue, so the client must decide whether to logon again to
+        # attempt to resolve the issue.
+        raise PermissionDenied, "#{exception.message}"
+
+      else
+        raise exception
+      end
     end
   end
 end
