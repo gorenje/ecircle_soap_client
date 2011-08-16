@@ -46,13 +46,34 @@ module Ecircle
       Ecircle.client.update_user :userXmlSpec => to_xml
     end
 
-    def memberships
-      a = Ecircle.client.find_memberships_by_email :email => self.email
-      a.is_a?(Array) ? a.collect { |a| Ecircle::Group.find_by_id(a) } : []
+    # Returns the group ids this user is signed up to as an Array of strings.
+    def group_ids
+      [Ecircle.client.find_memberships_by_email(:email => email)].flatten.compact
+    end
+
+    def groups
+      group_ids.collect { |grpid| Ecircle::Group.find_by_id(grpid) }
+    end
+    alias_method :memberships, :groups
+
+    # +group_or_id+ may be a Ecircle::Group
+    # object, containing the group's id, or the id directly.
+    def in_group?(group_or_id)
+      group_ids.include?(Ecircle::User.group_id(group_or_id))
     end
 
     def join_group(group, send_invite = false, send_message = false)
       group.add_member self, send_invite, send_message
+    end
+
+    # Unsubscribe this user from the given group. group may be a Ecircle::Group
+    # object, containing the group's id, or the id directly.
+    # Always returns true.
+    def leave_group(group_or_id, send_message = false)
+      Ecircle.client.
+        unsubscribe_member_by_email(:groupId     => Ecircle::User.group_id(group_or_id),
+                                    :email       => email,
+                                    :sendMessage => send_message)
     end
 
     def to_xml
@@ -87,6 +108,10 @@ module Ecircle
     end
 
     private
+
+    def self.group_id(group_obj_or_id)
+      (group_obj_or_id.is_a?(Ecircle::Group) ? group_obj_or_id.id : group_obj_or_id).to_s
+    end
 
     def initialize_with_xml(xml_string)
       init_with_xml("user", xml_string)

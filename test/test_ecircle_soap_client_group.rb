@@ -32,8 +32,30 @@ class TestEcircleSoapClientGroup < Test::Unit::TestCase
   end
 
   context "Ecircle::Group" do
-    should "be tested" do
-      assert true
+    should "have a remove_user method - part 1" do
+      grp, user = Ecircle::Group.new, Ecircle::User.new
+      mock(user).leave_group( grp, false) { "fubar" }
+      assert_equal "fubar", grp.remove_user(user)
+    end
+
+    should "have a remove_user method - part 2" do
+      grp, user = Ecircle::Group.new, Ecircle::User.new
+      mock(user).leave_group( grp, true) { "fubar" }
+      assert_equal "fubar", grp.remove_user(user, true)
+    end
+
+    should "have a remove member method - part 1" do
+      grp, usr, member = Ecircle::Group.new, Ecircle::User.new, Object.new
+      mock(usr).leave_group(grp, true) { "fubar" }
+      mock(member).user { usr }
+      assert_equal "fubar", grp.remove_member(member, true)
+    end
+
+    should "have a remove member method - part 2" do
+      grp, usr, member = Ecircle::Group.new, Ecircle::User.new, Object.new
+      mock(usr).leave_group(grp, false) { "fubar" }
+      mock(member).user { usr }
+      assert_equal "fubar", grp.remove_member(member)
     end
   end
 end

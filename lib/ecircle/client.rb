@@ -39,6 +39,11 @@ module Ecircle
         case data
         when /^[<]user/ then Ecircle::User.new(data)
         when /^[<]member/ then Ecircle::Member.new(data)
+        when Hash
+          # If the response is only an empty element, the data will look like this:
+          # {:"@xmlns:ns1"=>"http://webservices.ecircleag.com/rpcns"}
+          # Return nil if we only have attributes.
+          data.all? { |key, value| key.to_s =~ /^@/ } ? nil : data
         else
           data
         end

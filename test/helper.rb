@@ -50,6 +50,27 @@ class Test::Unit::TestCase
     end
   end
 
+  def in_soap_body
+    <<-SOAP
+     <?xml version="1.0" encoding="UTF-8"?>
+      <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <soapenv:Body>
+         #{yield}
+        </soapenv:Body>
+      </soapenv:Envelope>
+    SOAP
+  end
+
+  def mock_response(resp)
+    mock_ecircle_client(true) do |client, savon_client|
+      mock(Ecircle).client { client }
+      mock(client).logon { nil }
+      savon_client.request.with_any_args do
+        Savon::SOAP::Response.new(HTTPI::Response.new(200, {}, resp))
+      end
+    end
+  end
+
   def config_soap_client
     # keep login details separate from gem.
     settings = begin

@@ -126,5 +126,56 @@ class TestEcircleSoapClient < Test::Unit::TestCase
       mock(client).logon.times(0)
       assert_equal "somesessiontoken", client.method_missing(:logon, nil)
     end
+
+    context "parsing results" do
+
+      should "return nil for responses without content except attributes" do
+        mock_response(in_soap_body do
+          <<-SOAP
+            <FoobarResponse xmlns="">
+              <ns1:FoobarReturn xsi:nil="true" xmlns:ns1="http://webservices.ecircleag.com/rpcns"/>
+            </FoobarResponse>
+          SOAP
+        end)
+        assert_equal(nil, Ecircle.client.foobar)
+      end
+
+      should "return nil for responses without fitting content" do
+        mock_response(in_soap_body do
+          <<-SOAP
+            <FoobarResponse xmlns=""/>
+          SOAP
+        end)
+        assert_equal(nil, Ecircle.client.foobar)
+      end
+
+      [true, false].each do |boolean|
+        should "return #{boolean} for return value of #{boolean}" do
+          mock_response(in_soap_body do
+            <<-SOAP
+              <FoobarResponse xmlns="">
+                <ns1:FoobarReturn xsi:nil="true" xmlns:ns1="http://webservices.ecircleag.com/rpcns">
+                  #{boolean}
+                </ns1:FoobarReturn>
+              </FoobarResponse>
+            SOAP
+          end)
+          assert_equal(boolean, Ecircle.client.foobar)
+        end
+      end
+
+      should "return XML for responses with other content" do
+        mock_response(in_soap_body do
+          <<-SOAP
+            <FoobarResponse xmlns="">
+              <ns1:FoobarReturn xsi:nil="true" xmlns:ns1="http://webservices.ecircleag.com/rpcns">
+                Snafu
+              </ns1:FoobarReturn>
+            </FoobarResponse>
+          SOAP
+        end)
+        assert_equal("Snafu", Ecircle.client.foobar.strip)
+      end
+    end
   end
 end

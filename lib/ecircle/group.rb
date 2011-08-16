@@ -30,12 +30,20 @@ module Ecircle
 
     # Make a user a member of a group. Can be called multiple times for the same
     # user, eCircle checks for duplicates based on the email or whatever.
-    # Returns a member id which then can be used to create a new member.
+    # Returns a member object.
     def add_member(user, send_invite = false, send_message = false)
       member_id = Ecircle.client.
         create_member(:userId  => user.id,     :groupId     => @id,
                       :invite  => send_invite, :sendMessage => send_message)
       Ecircle::Member.find_by_id(member_id)
+    end
+
+    def remove_user(user, send_message = false)
+      user.leave_group(self, send_message)
+    end
+
+    def remove_member(member, send_message = false)
+      member.user.leave_group(self, send_message)
     end
 
     # clone this group at eCircle. For example,

@@ -26,6 +26,30 @@ class TestEcircleSoapClientUser < Test::Unit::TestCase
   end
 
   context "Ecircle::User" do
+
+    should "class method for getting group id from either group object or other value" do
+      [ ["1", 1], ["2", "2"], ["", ""], ["", nil] ].each do |expval, val|
+        assert_equal expval, Ecircle::User.group_id(val), "Failed for #{expval} / #{val}"
+      end
+
+      grp = Ecircle::Group.new
+      [ ["1", 1], ["2", "2"], ["", ""], ["", nil] ].each do |expval, val|
+        grp.id = val
+        assert_equal expval, Ecircle::User.group_id(grp), "Failed for #{expval} / #{val}"
+      end
+    end
+
+    should "return nil when user can't be found" do
+      mock_response(in_soap_body do
+        <<-SOAP
+          <LookupUserByEmailResponse xmlns="">
+            <ns1:lookupUserByEmailReturn xsi:nil="true" xmlns:ns1="http://webservices.ecircleag.com/rpcns"/>
+          </LookupUserByEmailResponse>
+        SOAP
+      end)
+      assert_equal(nil, Ecircle::User.find_by_email("bogus"))
+    end
+
     should "be able to create via email" do
       user, email, req_obj = Ecircle::User.new, "this@is.the.email.org", Object.new
 
@@ -35,9 +59,112 @@ class TestEcircleSoapClientUser < Test::Unit::TestCase
       mock(req_obj).create_user(:userXmlSpec => user.to_xml) { "thisisid" }
       mock(Ecircle).client { req_obj }
 
-      u = Ecircle::User.create_by_email(email)
-      assert_equal "thisisid", u.id
-      assert_equal email, u.email
+      user = Ecircle::User.create_by_email(email)
+      assert_equal "thisisid", user.id
+      assert_equal email, user.email
+    end
+
+    should "return the group ids of a user" do
+      id1, id2 = "123", "456"
+      mock_response(in_soap_body do
+        <<-SOAP
+          <FindMembershipsByEmailResponse xmlns="">
+            <ns1:findMembershipsByEmailReturn xmlns:ns1="http://webservices.ecircleag.com/rpcns">#{id1}</ns1:findMembershipsByEmailReturn>
+            <ns2:findMembershipsByEmailReturn xmlns:ns2="http://webservices.ecircleag.com/rpcns">#{id2}</ns2:findMembershipsByEmailReturn>
+          </FindMembershipsByEmailResponse>
+        SOAP
+      end)
+      user = Ecircle::User.new
+      user.email = "bla@example.com"
+      assert_equal([id1, id2], user.group_ids)
+    end
+
+    should "return an array even if there is only one membership" do
+      id1 = "123"
+      mock_response(in_soap_body do
+        <<-SOAP
+          <FindMembershipsByEmailResponse xmlns="">
+            <ns1:findMembershipsByEmailReturn xmlns:ns1="http://webservices.ecircleag.com/rpcns">#{id1}</ns1:findMembershipsByEmailReturn>
+          </FindMembershipsByEmailResponse>
+        SOAP
+      end)
+      user = Ecircle::User.new
+      user.email = "bla@example.com"
+      assert_equal([id1], user.group_ids)
+    end
+
+    should "return an empty array if there is no membership" do
+      mock_response(in_soap_body do
+        <<-SOAP
+          <FindMembershipsByEmailResponse xmlns="">
+            <ns1:findMembershipsByEmailReturn xsi:nil="true" xmlns:ns1="http://webservices.ecircleag.com/rpcns"/>
+          </FindMembershipsByEmailResponse>
+        SOAP
+      end)
+      user = Ecircle::User.new
+      user.email = "bla@example.com"
+      assert_equal([], user.group_ids)
+    end
+
+    should "return all groups with groups" do
+      user = Ecircle::User.new
+      mock(user).group_ids { [1] }
+      mock(Ecircle::Group).find_by_id(1) { "imagroup" }
+      assert_equal(["imagroup"], user.groups)
+    end
+
+    should "return all groups with memberships" do
+      user = Ecircle::User.new
+      mock(user).group_ids { [1,2] }
+      mock(Ecircle::Group).find_by_id(1) { "imagroup" }
+      mock(Ecircle::Group).find_by_id(2) { "fubar" }
+      assert_equal(["imagroup", "fubar"], user.memberships)
+    end
+
+    should "return the inclusion into a group by id or group" do
+      user = Ecircle::User.new
+      mock(user).group_ids.any_number_of_times { ["1", "42", "64"] }
+      assert user.in_group?("42")
+      assert !user.in_group?("43")
+      grp = Ecircle::Group.new
+      grp.id = "1"
+      assert user.in_group?(grp)
+      grp.id = "0"
+      assert !user.in_group?(grp)
+    end
+
+    should "be able to unsubscribe from a group by using the group id" do
+      user, email, req_obj = Ecircle::User.new, "this@is.the.email.org", Object.new
+
+      user.email = email
+      group_id = 123456
+
+      mock(req_obj).unsubscribe_member_by_email(
+        :groupId     => "123456",
+        :email        => email,
+        :sendMessage => false
+      ) { true }
+      mock(Ecircle).client { req_obj }
+
+      assert user.leave_group(group_id)
+    end
+
+    should "be able to unsubscribe from a group by using a group object" do
+      user, email, req_obj = Ecircle::User.new, "this@is.the.email.org", Object.new
+
+      user.email = email
+
+      group = Ecircle::Group.new
+      group.id = "123456"
+
+      mock(req_obj).unsubscribe_member_by_email(
+        :groupId => "123456",
+        :email   => email,
+        :sendMessage => false
+      ) { true }
+      mock(Ecircle).client { req_obj }
+
+      assert user.leave_group(group)
     end
 
     should "support namedattr's for defining custom values" do
