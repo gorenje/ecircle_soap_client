@@ -86,4 +86,31 @@ class Test::Unit::TestCase
       config.password = settings["password"]
     end
   end
+
+  def assert_difference(expression, difference = 1, message = nil, &block)
+    b = block.send(:binding)
+    exps = Array.wrap(expression)
+    before = exps.map { |e| eval(e, b) }
+
+    yield
+
+    exps.each_with_index do |e, i|
+      error = "#{e.inspect} didn't change by #{difference}"
+      error = "#{message}.\n#{error}" if message
+      assert_equal(before[i] + difference, eval(e, b), error)
+    end
+  end
+end
+
+# Rails extension required for assert_difference (another rails extension)
+class Array
+  def self.wrap(object)
+    if object.nil?
+      []
+    elsif object.respond_to?(:to_ary)
+      object.to_ary
+    else
+      [object]
+    end
+  end
 end

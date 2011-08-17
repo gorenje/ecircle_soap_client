@@ -10,6 +10,24 @@ module Ecircle
       @session_token = nil
     end
 
+    class << self
+      # helper method for allowing clients to automatically retry requests to
+      # ecircle.
+      def attempt(retries = 1, &block)
+        begin
+          yield
+        rescue Ecircle::Client::NotLoggedIn => e
+          raise e unless retries > 0
+          attempt(retries - 1, &block)
+
+        rescue Ecircle::Client::PermissionDenied => e
+          raise e unless retries > 0
+          Ecircle.client.logon
+          attempt(retries - 1, &block)
+        end
+      end
+    end
+
     # This is the magic. All we do here is take the method name, camelcase it and
     # then pass it to eCircle. It is assumed that the args array contains a hash
     # as the first element. This then contains the arguments for the call. E.g.:

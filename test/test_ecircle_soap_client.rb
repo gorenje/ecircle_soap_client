@@ -29,6 +29,99 @@ class TestEcircleSoapClient < Test::Unit::TestCase
     end
   end
 
+  context "Ecircle::Client.attempt" do
+    setup do
+      @yield_count = 0
+    end
+
+    should "yield once if all goes well" do
+      assert_difference "@yield_count", 1 do
+        Ecircle::Client.attempt do
+          @yield_count += 1
+        end
+      end
+    end
+
+    should "raise exception if anything other than is raised" do
+      assert_raises RuntimeError do
+        assert_difference "@yield_count", 1 do
+          Ecircle::Client.attempt do
+            @yield_count += 1
+            raise RuntimeError, "fubar"
+          end
+        end
+      end
+    end
+
+    should "retry if one of two errors is thrown - propogate error on final retry" do
+      clnobj = Object.new
+      mock(clnobj).logon.times(2) { "" }
+      mock(Ecircle).client.any_number_of_times { clnobj }
+
+      assert_difference "@yield_count", 6 do
+        assert_raises Ecircle::Client::PermissionDenied do
+          Ecircle::Client.attempt(retries = 5) do
+            @yield_count += 1
+            raise Ecircle::Client::NotLoggedIn.new, "fubar" if @yield_count % 2 == 1
+            raise Ecircle::Client::PermissionDenied.new , "fubar" if @yield_count % 2 == 0
+          end
+        end
+      end
+    end
+
+    should "stop retries if no exception is raised - notloggedin" do
+      assert_difference "@yield_count", 5 do
+        Ecircle::Client.attempt(retries = 5) do
+          @yield_count += 1
+          raise Ecircle::Client::NotLoggedIn.new, "fubar" if @yield_count < 5
+        end
+      end
+    end
+
+    should "stop retries if no exception is raised - permission denied" do
+      clnobj = Object.new
+      mock(clnobj).logon.times(4) { "" }
+      mock(Ecircle).client.any_number_of_times { clnobj }
+
+      assert_difference "@yield_count", 5 do
+        Ecircle::Client.attempt(retries = 5) do
+          @yield_count += 1
+          raise Ecircle::Client::PermissionDenied.new, "fubar" if @yield_count < 5
+        end
+      end
+    end
+
+    should "exit immediately if the logon method raises exception" do
+      clnobj = Object.new
+      mock(clnobj).logon do
+        raise Ecircle::Client::PermissionDenied.new, "came from login"
+      end
+      mock(Ecircle).client.any_number_of_times { clnobj }
+
+      exp = assert_raises Ecircle::Client::PermissionDenied do
+        assert_difference "@yield_count", 1 do
+          Ecircle::Client.attempt(retries = 5) do
+            @yield_count += 1
+            raise Ecircle::Client::PermissionDenied.new, "fubar" if @yield_count < 5
+          end
+        end
+      end
+      assert_equal "came from login", exp.message
+    end
+
+    should "don't call logon when not loggedin exception is raised" do
+      mock(Ecircle).client.times(0)
+
+      assert_difference "@yield_count", 3 do
+        Ecircle::Client.attempt(retries = 10) do
+          @yield_count += 1
+          raise Ecircle::Client::NotLoggedIn.new, "fubar" if @yield_count < 3
+        end
+      end
+    end
+  end
+
+
   context "Ecircle::Client" do
     should "logon if not logged in" do
       mock_ecircle_client(true) do |client, req_obj|
