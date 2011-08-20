@@ -13,7 +13,7 @@ module Ecircle
     class << self
       # helper method for allowing clients to automatically retry requests to
       # ecircle.
-      def attempt(retries = 1, &block)
+      def attempt(retries = 2, &block)
         begin
           yield
         rescue Ecircle::Client::NotLoggedIn => e
@@ -24,6 +24,16 @@ module Ecircle
           raise e unless retries > 0
           Ecircle.client.logon
           attempt(retries - 1, &block)
+
+        rescue NoMethodError => e
+          raise e unless retries > 0
+          ## FIXME horrible hack because ecircle sometimes forgets that they
+          ## FIXME have a FindMembershipsByEmail method - old software with bad memory?
+          if e.message =~ /No such operation 'FindMembershipsByEmail'/
+            attempt(retries - 1, &block)
+          else
+            raise e
+          end
         end
       end
     end

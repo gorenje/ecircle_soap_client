@@ -43,11 +43,53 @@ class TestEcircleSoapClient < Test::Unit::TestCase
     end
 
     should "raise exception if anything other than is raised" do
-      assert_raises RuntimeError do
-        assert_difference "@yield_count", 1 do
+      assert_difference "@yield_count", 1 do
+        assert_raises RuntimeError do
           Ecircle::Client.attempt do
             @yield_count += 1
             raise RuntimeError, "fubar"
+          end
+        end
+      end
+    end
+
+    should "default should be 2 retries" do
+      # 3 because the '+= 1' happens before the exception is thrown.
+      assert_difference "@yield_count", 3 do
+        assert_raises Ecircle::Client::NotLoggedIn do
+          Ecircle::Client.attempt do
+            @yield_count += 1
+            raise Ecircle::Client::NotLoggedIn.new
+          end
+        end
+      end
+    end
+
+    should "should retry on NoMethodError but only for findMembershipByEmail" do
+      # 3 because the '+= 1' happens before the exception is thrown.
+      assert_difference "@yield_count", 1 do
+        assert_raises NoMethodError do
+          Ecircle::Client.attempt do
+            @yield_count += 1
+            raise NoMethodError, "funar"
+          end
+        end
+      end
+
+      assert_difference "@yield_count", 3 do
+        assert_raises NoMethodError do
+          Ecircle::Client.attempt do
+            @yield_count += 1
+            raise NoMethodError, "No such operation 'FindMembershipsByEmail'"
+          end
+        end
+      end
+
+      assert_difference "@yield_count", 11 do
+        assert_raises NoMethodError do
+          Ecircle::Client.attempt(10) do
+            @yield_count += 1
+            raise NoMethodError, "No such operation 'FindMembershipsByEmail'"
           end
         end
       end
@@ -98,8 +140,9 @@ class TestEcircleSoapClient < Test::Unit::TestCase
       end
       mock(Ecircle).client.any_number_of_times { clnobj }
 
-      exp = assert_raises Ecircle::Client::PermissionDenied do
-        assert_difference "@yield_count", 1 do
+      exp = nil
+      assert_difference "@yield_count", 1 do
+        exp = assert_raises Ecircle::Client::PermissionDenied do
           Ecircle::Client.attempt(retries = 5) do
             @yield_count += 1
             raise Ecircle::Client::PermissionDenied.new, "fubar" if @yield_count < 5
