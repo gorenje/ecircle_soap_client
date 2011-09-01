@@ -4,14 +4,14 @@
 # -*- encoding: utf-8 -*-
 
 Gem::Specification.new do |s|
-  s.name = %q{ecircle_soap_client}
-  s.version = "0.0.4"
+  s.name = "ecircle_soap_client"
+  s.version = "0.0.5"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Gerrit Riessen"]
-  s.date = %q{2011-08-17}
-  s.description = %q{See summary.}
-  s.email = %q{gerrit.riessen@gmail.com}
+  s.date = "2011-09-01"
+  s.description = "See summary."
+  s.email = "gerrit.riessen@gmail.com"
   s.extra_rdoc_files = [
     "README.md"
   ]
@@ -40,11 +40,11 @@ Gem::Specification.new do |s|
     "test/test_ecircle_soap_client_message.rb",
     "test/test_ecircle_soap_client_user.rb"
   ]
-  s.homepage = %q{http://google.com/search?q=ecircle}
+  s.homepage = "http://google.com/search?q=ecircle"
   s.licenses = ["MIT"]
   s.require_paths = ["lib"]
-  s.rubygems_version = %q{1.6.2}
-  s.summary = %q{Ecircle SOAP client for synchron API}
+  s.rubygems_version = "1.8.10"
+  s.summary = "Ecircle SOAP client for synchron API"
 
   if s.respond_to? :specification_version then
     s.specification_version = 3
