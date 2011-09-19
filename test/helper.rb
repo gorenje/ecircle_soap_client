@@ -22,6 +22,23 @@ require 'ecircle_soap_client'
 class Test::Unit::TestCase
   include RR::Adapters::TestUnit
 
+  # ensure we don't end up with duplication in the test naming and shoulda then
+  # ignores these tests. only an issue with shoulda.
+  def self.method_added(name)
+    @@_method_name_store_ ||= {}
+    (@@_method_name_store_[self] ||= []).tap do |ary|
+      raise RuntimeError, "\n !! Duplicate test: #{name} on #{self}" if ary.include?(name)
+      ary << name
+    end
+  end
+
+  def use_priority_to_send_mail(&block)
+    Ecircle.configure.use_priority = true
+    yield
+  ensure
+    Ecircle.configure.use_priority = false
+  end
+
   def _soap_fault(msg)
     os = OpenStruct.new
     os.body = Savon::SOAP::XML.new.xml do |x|

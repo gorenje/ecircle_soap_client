@@ -29,6 +29,15 @@ class TestEcircleSoapClient < Test::Unit::TestCase
     end
   end
 
+  context "Ecircle::Configuration" do
+    should "have a use_priority configuration option" do
+      assert_equal false, Ecircle.configure.use_priority
+      Ecircle.configure.use_priority = true
+      assert Ecircle.configure.use_priority
+      Ecircle.configure.use_priority = false
+    end
+  end
+
   context "Ecircle::Client.attempt" do
     setup do
       @yield_count = 0

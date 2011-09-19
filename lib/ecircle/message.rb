@@ -59,16 +59,27 @@ module Ecircle
 
                when /single/
                  if parameters.nil?
-                   Ecircle.client.
-                     send_single_message_to_user(:singleMessageId => @id,
-                                                 :userId => user.id)
+                   if Ecircle.configure.use_priority
+                     Ecircle.client.
+                       send_priority_single_message_to_user(:singleMessageId => @id,
+                                                            :userId => user.id)
+                   else
+                     Ecircle.client.
+                       send_single_message_to_user(:singleMessageId => @id,
+                                                   :userId => user.id)
+                   end
                  else
                    paras = { :singleMessageId => @id,
                              :userId          => user.id,
                              :names           => parameters.keys,
                              :values          => parameters.values,
                            }
-                   Ecircle.client.send_parametrized_single_message_to_user(paras)
+
+                   if Ecircle.configure.use_priority
+                     Ecircle.client.send_priority_parametrized_single_message_to_user(paras)
+                   else
+                     Ecircle.client.send_parametrized_single_message_to_user(paras)
+                   end
                  end
 
                when /normal/

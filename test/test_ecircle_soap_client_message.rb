@@ -112,6 +112,22 @@ class TestEcircleSoapClientMessage < Test::Unit::TestCase
         end
       end
 
+      should "use priority single message if no parameters and priority set" do
+        use_priority_to_send_mail do
+          mock_ecircle_client do |client|
+            msg     = Ecircle::Message.new(:type => 'single', :id => "fubar")
+            user    = Ecircle::User.new
+            user.id = "snafu"
+
+            client.send_priority_single_message_to_user(:singleMessageId => "fubar",
+                                                        :userId => user.id)
+            result = msg.send_to_user user
+            assert_equal true, result.first
+            assert_equal nil, result.last
+          end
+        end
+      end
+
       should "return false and the result if result != nil" do
         mock_ecircle_client do |client|
           msg     = Ecircle::Message.new(:type => 'single', :id => "fubar")
@@ -143,6 +159,28 @@ class TestEcircleSoapClientMessage < Test::Unit::TestCase
           result = msg.send_to_user user, parameters
           assert_equal true, result.first
           assert_equal nil, result.last
+        end
+      end
+
+      should "use priority parameterized if there are paramters and priority set" do
+        use_priority_to_send_mail do
+          mock_ecircle_client do |client|
+            msg     = Ecircle::Message.new(:type => 'single', :id => "fubar")
+            user    = Ecircle::User.new
+            user.id = "snafu"
+            parameters = {
+              :one => :two,
+              :three => :four
+            }
+            client.
+              send_priority_parametrized_single_message_to_user(:singleMessageId => "fubar",
+                                                                :userId          => user.id,
+                                                                :names           => parameters.keys,
+                                                                :values          => parameters.values)
+            result = msg.send_to_user user, parameters
+            assert_equal true, result.first
+            assert_equal nil, result.last
+          end
         end
       end
 
