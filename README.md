@@ -7,6 +7,11 @@ Experimental code and not yet complete. Lots of testing are missing and function
 Simple things like creating and deleting users and groups is possible, but message creation and
 sending are not yet supported.
 
+Travis
+------
+
+[![Build Status](https://secure.travis-ci.org/gorenje/ecircle_soap_client.png?branch=master)](http://travis-ci.org/gorenje/ecircle_soap_client)
+
 Description
 -----------
 
