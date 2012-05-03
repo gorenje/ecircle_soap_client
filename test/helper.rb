@@ -89,13 +89,11 @@ class Test::Unit::TestCase
   end
 
   def config_soap_client
-    # keep login details separate from gem.
-    settings = begin
-                 YAML::load_file(File.join(File.dirname(__FILE__), '.login.yml'))
-               rescue
-                 puts "NO test/.login.yml --> copy the sample across to test"
-                 exit 1
-               end
+    settings = {
+      "user"     => "username",
+      "realm"    => "http://example.com",
+      "password" => 'password'
+    }
 
     Ecircle.configure do |config|
       config.user     = settings["user"]
